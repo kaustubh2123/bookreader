@@ -1,0 +1,82 @@
+# imports
+from picamera import PiCamera
+from time import sleep
+from PIL import Image
+import pytesseract
+import sys
+from subprocess import call
+import RPi.GPIO as GPIO
+import time
+camera = PiCamera()
+camera.resolution = (2592, 1944)
+
+try:
+	while True:
+		#capture image
+		
+		
+		camera.start_preview()
+		sleep(5)
+		camera.capture('/home/pi/BookReader/br.jpg')
+		camera.stop_preview()
+
+		sleep(5)         #waiting 5 seconds
+
+		img = Image.open('/home/pi/BookReader/br.jpg')
+		text = pytesseract.image_to_string(img)
+		text_file = open('/home/pi/BookReader/br.txt', 'w')
+		text_file.write(text)
+		text_file.close()
+		print(text)
+
+		sleep(5)            #waiting 5 seconds
+
+		file = open('/home/pi/BookReader/br.txt', 'r')
+		text = file.read().strip()
+		file.close()
+		speech= text
+		call(["espeak",speech])
+
+		sleep(8)            #waiting 8 seconds
+
+		left1 = 9
+		left2 = 10
+		left3= 7
+		left4= 8
+		GPIO.setmode(GPIO.BCM)                         #Motor 1 rotates for mountain
+		GPIO.setup(left1,GPIO.OUT)
+		GPIO.setup(left2,GPIO.OUT)
+		GPIO.output(left1,GPIO.LOW)
+		GPIO.output(left2,GPIO.HIGH)
+		time.sleep(3)
+		GPIO.cleanup()
+		time.sleep(2)
+		GPIO.setmode(GPIO.BCM)                        #Motor 2 rotates for flip
+		GPIO.setup(left3,GPIO.OUT)
+		GPIO.setup(left4,GPIO.OUT)
+		GPIO.output(left3,GPIO.LOW)
+		GPIO.output(left4,GPIO.HIGH)
+		time.sleep(0.3)
+		GPIO.cleanup()
+		time.sleep(2)
+		GPIO.setmode(GPIO.BCM)      #Motor 1 rotates for flat
+		GPIO.setup(left1,GPIO.OUT)
+		GPIO.setup(left2,GPIO.OUT)
+		GPIO.output(left1,GPIO.HIGH)
+		GPIO.output(left2,GPIO.LOW)
+		time.sleep(3)
+		GPIO.cleanup()
+		time.sleep(2)
+		GPIO.setmode(GPIO.BCM)   #Motor 2 rotates for returning to its initial position
+		GPIO.setup(left3,GPIO.OUT)
+		GPIO.setup(left4,GPIO.OUT)
+		GPIO.output(left3,GPIO.HIGH)
+		GPIO.output(left4,GPIO.LOW)
+		time.sleep(0.5)
+		GPIO.cleanup()
+		time.sleep(2)
+		
+		sleep(10) #waiting 10 seconds
+		
+except KeyboardInterrupt:
+    print("Stopping")
